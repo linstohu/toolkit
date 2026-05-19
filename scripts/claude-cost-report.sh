@@ -85,7 +85,9 @@ preflight() {
 # 数据加载与字段提取
 # ============================================================
 load_data() {
-  ALL_JSON=$(npx -y ccusage@latest daily --json --breakdown)
+  # 使用 `claude daily` 而非 top-level `daily`:新版 ccusage 的多 agent 聚合命令
+  # 把 .date 改成了 .period,并移除了 .modelBreakdowns。Claude 子命令仍保留原 schema。
+  ALL_JSON=$(npx -y ccusage@latest claude daily --json --breakdown)
 
   # 一次性提取所有需要的标量
   eval "$(echo "$ALL_JSON" | jq -r --arg date "$REPORT_DATE" '
