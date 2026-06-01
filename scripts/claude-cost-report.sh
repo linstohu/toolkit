@@ -92,13 +92,16 @@ load_data() {
   # 一次性提取所有需要的标量
   eval "$(echo "$ALL_JSON" | jq -r --arg date "$REPORT_DATE" '
     .daily as $d
+    | ($date[0:7]) as $month
     | ($d | map(.date) | unique | length) as $days_count
-    | ($d | map(.totalCost // 0) | add // 0) as $all_total
+    | ($d | map(select(.date[0:7] == $month)) | map(.totalCost // 0) | add // 0) as $mtd_total
+    | ($d | map(select(.date[0:7] == $month)) | length) as $mtd_days
     | ($d | sort_by(.date) | .[-7:] | map(.totalCost // 0) | add / (length|if .==0 then 1 else . end)) as $avg_7
     | ($d | sort_by(.date) | .[-30:] | map(.totalCost // 0) | add / (length|if .==0 then 1 else . end)) as $avg_30
     | ($d | map(select(.date == $date)) | .[0]) as $t
     | @sh "DAYS_COUNT=\($days_count)",
-      @sh "ALL_TOTAL=\($all_total)",
+      @sh "MTD_TOTAL=\($mtd_total)",
+      @sh "MTD_DAYS=\($mtd_days)",
       @sh "AVG_7=\($avg_7)",
       @sh "AVG_30=\($avg_30)",
       @sh "DAY_COST=\($t.totalCost // 0)",
@@ -175,7 +178,7 @@ build_cumulative_section() {
 
 | Metric | Value |
 |--------|------:|
-| All-time total (${DAYS_COUNT} days) | \$$(fmt_money "$ALL_TOTAL") |
+| Month-to-date (${REPORT_DATE:0:7}, ${MTD_DAYS} days) | \$$(fmt_money "$MTD_TOTAL") |
 | 7-day daily average | \$$(fmt_money "$AVG_7") |
 | 30-day daily average | \$$(fmt_money "$AVG_30") |
 EOF
@@ -235,9 +238,9 @@ EOF
 
 build_title() {
   if [[ "$IS_BACKFILL" == "1" ]]; then
-    echo "Claude cost — ${REPORT_DATE} (\$$(fmt_money "$DAY_COST"), backfilled)"
+    echo "Claude cost — ${REPORT_DATE} (\$$(fmt_money "$DAY_COST") spent, backfilled)"
   else
-    echo "Claude cost — ${REPORT_DATE} (\$$(fmt_money "$DAY_COST") today, \$$(fmt_money "$ALL_TOTAL") total)"
+    echo "Claude cost — ${REPORT_DATE} (\$$(fmt_money "$DAY_COST") today)"
   fi
 }
 
