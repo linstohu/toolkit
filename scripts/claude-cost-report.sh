@@ -18,7 +18,7 @@
 #   -h, --help           显示本帮助并退出
 #
 # 环境变量:
-#   CLAUDE_PLAN          套餐说明,如 'Max 5x (subscription, 5× Pro)';未设则省略该行
+#   CLAUDE_PLAN          套餐说明,如 'Max 20x (subscription, 20× Pro)';未设则省略该行
 #   CCUSAGE_PROJECT      指定 ccusage 项目键;默认由仓库根路径自动派生
 #   CCUSAGE_VERSION      ccusage 版本(默认 latest;建议复现场景钉到验证过的版本)
 #   COST_REPORT_LABEL    issue 标签(默认 cost-report)
@@ -419,7 +419,7 @@ build_body() {
 # 推送 / 预览
 # ------------------------------------------------------------
 publish() {
-  local title body tmp url
+  local title body url
   title="$(build_title)"
   body="$(build_body)"
 
@@ -438,9 +438,8 @@ EOF
     return
   fi
 
-  tmp="$(mktemp)"; trap 'rm -f "$tmp"' RETURN
-  printf '%s\n' "$body" > "$tmp"
-  url="$(gh issue create --title "$title" --body-file "$tmp" --label "$LABEL")"
+  # 正文经 stdin 传给 gh(--body-file -),避免临时文件与 RETURN trap 在 set -u 下的坑
+  url="$(printf '%s\n' "$body" | gh issue create --title "$title" --body-file - --label "$LABEL")"
   echo "已创建:$url"
 }
 
