@@ -39,3 +39,17 @@ claude-cost-report.sh --dry-run       # 预览报告,不创建 label、不推送
 **依赖**:`gh`(已登录)、`jq`、`awk`、`node`/`npx`、`git`。
 
 当日无用量或成本为 0 时,脚本提示后正常退出,不推送。
+
+### `dev-clean.sh`
+
+交互式扫描并清理 macOS 上可重建的开发缓存。默认先展示清理项和空间估算，用户多选并确认后才执行；Docker 项另有一次确认。
+
+```sh
+brew install gum
+scripts/dev-clean.sh             # 交互选择并确认
+scripts/dev-clean.sh --dry-run   # 仅预览，不删除
+```
+
+覆盖 Xcode DerivedData、SwiftPM、不可用的 Simulator 设备记录、Homebrew、常见语言包管理器、Gradle、Go、VS Code、JetBrains，以及 Docker 构建缓存、悬空镜像和已停止容器。脚本不使用 `sudo`，也不删除可用的 Simulator、项目依赖目录、源码、Xcode Archives、Docker volumes、运行中的容器、非悬空镜像、配置或用户文档。
+
+唯一必需的非系统运行时依赖是 `gum`；各开发工具 CLI 均为可选项，脚本会自动检测并仅在可用时提供相应清理项。
